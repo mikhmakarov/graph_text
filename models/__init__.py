@@ -1,3 +1,3 @@
-from .tadw.wrapper import TadwModel
+from .tadw import TADW
 
-__all__ = ['TadwModel']
+__all__ = ['TADW']
