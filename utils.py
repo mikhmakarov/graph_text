@@ -1,5 +1,18 @@
+import re
 import numpy as np
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer, SnowballStemmer
 from scipy import sparse
+
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('stopwords')
+
+stop_words = stopwords.words('english')
+
+lemmatizer = WordNetLemmatizer()
+stemmer = SnowballStemmer('english')
 
 
 def normalize_adjacency(graph):
@@ -19,3 +32,32 @@ def normalize_adjacency(graph):
     degs = sparse.coo_matrix((degs, (ind, ind)), shape=A.shape, dtype=np.float32)
     A = A.dot(degs)
     return A
+
+
+def preprocess_text(text, stem=False):
+    tokens = []
+    text = re.sub(r'[^a-zA-Z \t]+', ' ', text)
+    for t, pos in nltk.pos_tag(nltk.word_tokenize(text.lower())):
+        if isinstance(pos, str):
+            wntag = pos[0].lower()
+            wntag = wntag if wntag in ['a', 'r', 'n', 'v'] else None
+        else:
+            wntag = None
+
+        if wntag is not None:
+            lem = lemmatizer.lemmatize(t, wntag)
+        else:
+            lem = t
+
+        if not lem.isalpha() or len(lem) < 3:
+            continue
+
+        if lem in stop_words:
+            continue
+
+        if stem:
+            lem = stemmer.stem(lem)
+
+        tokens.append(lem)
+
+    return tokens

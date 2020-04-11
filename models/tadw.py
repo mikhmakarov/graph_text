@@ -3,13 +3,15 @@ import numpy as np
 from numpy import linalg as la
 from sklearn.preprocessing import normalize
 
+from models.base_model import BaseModel
 
-class TADW(object):
+
+class TADW(BaseModel):
     def __init__(self, graph, features, dim=80, lamb=0.2):
-        super(TADW, self).__init__()
+        super(TADW, self).__init__(graph, features, dim)
 
         self.g = graph
-        self.features = features
+        self.features = np.array(features)
         self.lamb = lamb
         self.dim = int(dim/2)
 
@@ -46,7 +48,7 @@ class TADW(object):
         self.H = np.random.randn(self.dim, self.feature_size)
         # Update
         for i in range(20):
-            # print('Iteration ', i)
+            print('Iteration ', i)
             # Update W
             B = np.dot(self.H, self.T)
             drv = 2 * np.dot(np.dot(B, B.T), self.W) - \

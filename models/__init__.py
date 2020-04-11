@@ -1,3 +1,4 @@
 from .tadw import TADW
+from .tridnr import TriDnr
 
-__all__ = ['TADW']
+__all__ = ['TADW', 'TriDnr']
