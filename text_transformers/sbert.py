@@ -1,4 +1,4 @@
-import scipy
+import numpy as np
 from sentence_transformers import SentenceTransformer
 
 
@@ -10,4 +10,4 @@ class SBert(object):
     def fit_transform(self, texts):
         sentence_embeddings = self.model.encode(texts)
 
-        return sentence_embeddings
+        return np.array(sentence_embeddings)
