@@ -71,7 +71,8 @@ def train_gcn(dataset,
     data = dataset.get_data()
     if use_embs:
         pad_ix, n_tokens, matrix, pretrained_embs = data['features']
-        pretrained_embs = torch.FloatTensor(pretrained_embs)
+        if pretrained_embs is not None:
+            pretrained_embs = torch.FloatTensor(pretrained_embs)
         features = torch.LongTensor(matrix)
     else:
         pad_ix = None
@@ -176,7 +177,7 @@ def train_gcn(dataset,
 def main():
     dataset = Cora()
     transformer = Index()
-    dataset.transform_features(transformer, pretrained=True)
+    dataset.transform_features(transformer, pretrained=False)
     train_gcn(dataset, lr=1e-2, n_epochs=200, verbose=True, use_embs=True)
 
 
