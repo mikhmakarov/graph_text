@@ -65,6 +65,10 @@ class GCN(nn.Module):
             h_0 = Variable(torch.zeros(1, h.shape[1], self.lstm_hidden_size))
             c_0 = Variable(torch.zeros(1, h.shape[1], self.lstm_hidden_size))
 
+            if torch.cuda.is_available():
+                h_0 = h_0.cuda()
+                c_0 = c_0.cuda()
+
             output, (final_hidden_state, final_cell_state) = self.lstm(h, (h_0, c_0))
 
             h = final_hidden_state[-1]
