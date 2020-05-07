@@ -12,10 +12,15 @@ from sklearn.metrics import f1_score
 
 from models import GCN
 from datasets import Cora, CiteseerM10, Dblp
-from text_transformers import TFIDF
+from text_transformers import TFIDF, Index
 
 
-def get_masks(n, main_ids, main_labels, test_ratio, val_ratio, seed=1):
+def get_masks(n,
+              main_ids,
+              main_labels,
+              test_ratio,
+              val_ratio,
+              seed=1):
     train_mask = np.zeros(n)
     val_mask = np.zeros(n)
     test_mask = np.zeros(n)
@@ -44,8 +49,9 @@ def evaluate(model, features, labels, mask):
     with torch.no_grad():
         logits = model(features)
         logits = logits[mask]
-        labels = labels[mask]
+        labels = labels[mask].detach().cpu().numpy()
         _, predicted = torch.max(logits, dim=1)
+        predicted = predicted.detach().cpu().numpy()
         f1 = f1_score(labels, predicted, average='micro')
         return f1
 
@@ -59,9 +65,18 @@ def train_gcn(dataset,
               lr=1e-2,
               weight_decay=5e-4,
               dropout=0.5,
-              verbose=True):
+              use_embs=False,
+              verbose=True,
+              cuda=False):
     data = dataset.get_data()
-    features = torch.FloatTensor(data['features'])
+    if use_embs:
+        pad_ix, n_tokens, matrix = data['features']
+        features = torch.LongTensor(matrix)
+    else:
+        pad_ix = None
+        n_tokens = None
+        features = torch.FloatTensor(data['features'])
+
     labels = torch.LongTensor(data['labels'])
     n = len(data['ids'])
     train_mask, val_mask, test_mask = get_masks(n,
@@ -75,6 +90,14 @@ def train_gcn(dataset,
     val_mask = torch.BoolTensor(val_mask)
     test_mask = torch.BoolTensor(test_mask)
 
+    if cuda:
+        torch.cuda.set_device("cuda:0")
+        features = features.cuda()
+        labels = labels.cuda()
+        train_mask = train_mask.cuda()
+        val_mask = val_mask.cuda()
+        test_mask = test_mask.cuda()
+
     g = DGLGraph(data['graph'])
     g = dgl.transform.add_self_loop(g)
     n_edges = g.number_of_edges()
@@ -83,9 +106,16 @@ def train_gcn(dataset,
     norm = torch.pow(degs, -0.5)
     norm[torch.isinf(norm)] = 0
 
+    if cuda:
+        norm = norm.cuda()
+
     g.ndata['norm'] = norm.unsqueeze(1)
 
-    in_feats = features.shape[1]
+    if use_embs:
+        in_feats = 64
+    else:
+        in_feats = features.shape[1]
+
     # + 1 for unknown class
     n_classes = data['n_classes'] + 1
     model = GCN(g,
@@ -93,7 +123,13 @@ def train_gcn(dataset,
                 n_hidden=n_hidden,
                 n_classes=n_classes,
                 activation=F.relu,
-                dropout=dropout)
+                dropout=dropout,
+                use_embs=use_embs,
+                pad_ix=pad_ix,
+                n_tokens=n_tokens)
+
+    if cuda:
+        model.cuda()
 
     loss_fcn = torch.nn.CrossEntropyLoss()
 
@@ -135,10 +171,10 @@ def train_gcn(dataset,
 
 
 def main():
-    dataset = Dblp()
-    transformer = TFIDF()
+    dataset = Cora()
+    transformer = Index()
     dataset.transform_features(transformer)
-    train_gcn(dataset, verbose=True)
+    train_gcn(dataset, lr=1e-3, n_epochs=800, verbose=True, use_embs=True)
 
 
 if __name__ == '__main__':

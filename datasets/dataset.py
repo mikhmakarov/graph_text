@@ -62,7 +62,10 @@ class Dataset(object):
         if scipy.sparse.issparse(text_embs):
             text_embs = text_embs.todense()
 
-        self.features = text_embs.astype(float)
+        if not isinstance(text_embs, tuple):
+            self.features = text_embs.astype(float)
+        else:
+            self.features = text_embs
 
     def get_data(self):
         return {

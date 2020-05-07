@@ -17,10 +17,19 @@ class GCN(nn.Module):
                  n_hidden,
                  n_classes,
                  activation,
-                 dropout):
+                 use_embs=False,
+                 n_tokens=None,
+                 pad_ix=None,
+                 dropout=0.5):
         super(GCN, self).__init__()
 
         self.g = g
+        self.use_embs = use_embs
+        self.pad_ix = pad_ix
+        self.n_tokens = n_tokens
+
+        if use_embs:
+            self.emb = nn.Embedding(n_tokens, in_feats, padding_idx=pad_ix)
 
         self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
 
@@ -29,7 +38,16 @@ class GCN(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, features):
-        h = features
+        if self.use_embs:
+            seq_len = torch.sum(features != self.pad_ix, axis=1)
+
+            seq_len = seq_len.view((-1, 1))
+
+            h = self.emb(features)
+
+            h = h.sum(dim=1) / seq_len
+        else:
+            h = features
 
         h = self.gcn_layer1(self.g, h)
 
