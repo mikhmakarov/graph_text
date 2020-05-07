@@ -244,7 +244,8 @@ class GCN_Attention(nn.Module):
         if pretrained_embs is not None:
             self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
 
-        self.lstm = nn.LSTM(in_feats, self.lstm_hidden_size, num_layers=self.lstm_num_layers, bidirectional=True)
+        self.lstm = nn.LSTM(in_feats, self.lstm_hidden_size, num_layers=self.lstm_num_layers, bidirectional=True,
+                            dropout=0.2)
         self.W_s1 = nn.Linear(2 * self.lstm_hidden_size, 350)
         self.W_s2 = nn.Linear(350, 30)
 
@@ -271,7 +272,7 @@ class GCN_Attention(nn.Module):
         Tensor size : lstm_output.size() = (batch_size, num_seq, 2*hidden_size)
                       attn_weight_matrix.size() = (batch_size, 30, num_seq)
         """
-        attn_weight_matrix = self.W_s2(F.tanh(self.W_s1(lstm_output)))
+        attn_weight_matrix = self.dropout(self.W_s2(F.tanh(self.W_s1(lstm_output))))
         attn_weight_matrix = attn_weight_matrix.permute(0, 2, 1)
         attn_weight_matrix = F.softmax(attn_weight_matrix, dim=2)
 
