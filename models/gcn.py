@@ -21,7 +21,6 @@ class GCN(nn.Module):
                  activation,
                  use_embs=False,
                  pretrained_embs=None,
-                 lstm_num_layers=2,
                  n_tokens=None,
                  pad_ix=None,
                  dropout=0.5):
@@ -38,7 +37,9 @@ class GCN(nn.Module):
             if pretrained_embs is not None:
                 self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
 
-        self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
+            self.fc = nn.Linear(in_feats, 128)
+
+        self.gcn_layer1 = GraphConv(128, n_hidden, activation=activation)
 
         self.gcn_layer2 = GraphConv(n_hidden, n_classes)
 
@@ -54,6 +55,8 @@ class GCN(nn.Module):
 
             h = h.sum(dim=1) / seq_len
 
+            h = self.dropout(self.fc(h))
+
         else:
             h = features
 
@@ -64,6 +67,13 @@ class GCN(nn.Module):
         h = self.gcn_layer2(self.g, h)
 
         return h
+
+    def freeze_features(self, freeze):
+        self.emb.weight.requires_grad = not freeze
+
+    def freeze_graph(self, freeze):
+        self.gcn_layer1.weight.requires_grad = not freeze
+        self.gcn_layer2.weight.requires_grad = not freeze
 
 
 class GCN_LSTM(nn.Module):

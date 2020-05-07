@@ -56,6 +56,28 @@ def evaluate(model, features, labels, mask):
         return f1
 
 
+def train_one_epoch(model,
+                    features,
+                    train_mask,
+                    val_mask,
+                    labels,
+                    loss_fcn,
+                    optimizer):
+    model.train()
+    t0 = time.time()
+    # forward
+    logits = model(features)
+    loss = loss_fcn(logits[train_mask], labels[train_mask])
+
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
+    f1 = evaluate(model, features, labels, val_mask)
+
+    return f1, loss.item()
+
+
 def train_gcn(dataset,
               test_ratio=0.5,
               val_ratio=0.2,
@@ -147,25 +169,52 @@ def train_gcn(dataset,
 
     # initialize graph
     dur = []
-    for epoch in range(n_epochs):
-        model.train()
+    model.freeze_features(True)
+    for epoch in range(100):
         if epoch >= 3:
             t0 = time.time()
-        # forward
-        logits = model(features)
-        loss = loss_fcn(logits[train_mask], labels[train_mask])
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        f1, loss = train_one_epoch(model, features, train_mask, val_mask, labels, loss_fcn, optimizer)
 
         if epoch >= 3:
             dur.append(time.time() - t0)
 
-        f1 = evaluate(model, features, labels, val_mask)
         if verbose:
             print("Epoch {:05d} | Time(s) {:.4f} | Loss {:.4f} | F1 {:.4f} | "
-                  "ETputs(KTEPS) {:.2f}".format(epoch, np.mean(dur), loss.item(),
+                  "ETputs(KTEPS) {:.2f}".format(epoch, np.mean(dur), loss,
+                                                f1, n_edges / np.mean(dur) / 1000))
+
+    model.freeze_graph(True)
+    model.freeze_features(False)
+    for epoch in range(100):
+        if epoch >= 3:
+            t0 = time.time()
+
+        f1, loss = train_one_epoch(model, features, train_mask, val_mask, labels, loss_fcn, optimizer)
+
+        if epoch >= 3:
+            dur.append(time.time() - t0)
+
+        if verbose:
+            print("Epoch {:05d} | Time(s) {:.4f} | Loss {:.4f} | F1 {:.4f} | "
+                  "ETputs(KTEPS) {:.2f}".format(epoch, np.mean(dur), loss,
+                                                f1, n_edges / np.mean(dur) / 1000))
+
+
+    model.freeze_graph(False)
+    model.freeze_features(False)
+    for epoch in range(100):
+        if epoch >= 3:
+            t0 = time.time()
+
+        f1, loss = train_one_epoch(model, features, train_mask, val_mask, labels, loss_fcn, optimizer)
+
+        if epoch >= 3:
+            dur.append(time.time() - t0)
+
+        if verbose:
+            print("Epoch {:05d} | Time(s) {:.4f} | Loss {:.4f} | F1 {:.4f} | "
+                  "ETputs(KTEPS) {:.2f}".format(epoch, np.mean(dur), loss,
                                                 f1, n_edges / np.mean(dur) / 1000))
 
     f1 = evaluate(model, features, labels, test_mask)
