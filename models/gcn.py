@@ -20,6 +20,7 @@ class GCN(nn.Module):
                  activation,
                  use_embs=False,
                  pretrained_embs=None,
+                 lstm_num_layers=2,
                  n_tokens=None,
                  pad_ix=None,
                  dropout=0.5):
@@ -30,6 +31,7 @@ class GCN(nn.Module):
         self.pad_ix = pad_ix
         self.n_tokens = n_tokens
 
+        self.lstm_num_layers = lstm_num_layers
         self.lstm_hidden_size = 64
 
         if use_embs:
@@ -38,7 +40,7 @@ class GCN(nn.Module):
             if pretrained_embs is not None:
                 self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
 
-            self.lstm = nn.LSTM(in_feats, self.lstm_hidden_size)
+            self.lstm = nn.LSTM(in_feats, self.lstm_hidden_size, num_layers=self.lstm_num_layers, bidirectional=False)
 
             conv_inp = self.lstm_hidden_size
         else:
@@ -52,26 +54,26 @@ class GCN(nn.Module):
 
     def forward(self, features):
         if self.use_embs:
-            # seq_len = torch.sum(features != self.pad_ix, axis=1)
+            seq_len = torch.sum(features != self.pad_ix, axis=1)
 
-            # seq_len = seq_len.view((-1, 1))
+            seq_len = seq_len.view((-1, 1))
 
             h = self.emb(features)
 
-            # h = h.sum(dim=1) / seq_len
+            h = h.sum(dim=1) / seq_len
 
-            h = h.permute(1, 0, 2)
-
-            h_0 = Variable(torch.zeros(1, h.shape[1], self.lstm_hidden_size))
-            c_0 = Variable(torch.zeros(1, h.shape[1], self.lstm_hidden_size))
-
-            if torch.cuda.is_available():
-                h_0 = h_0.cuda()
-                c_0 = c_0.cuda()
-
-            output, (final_hidden_state, final_cell_state) = self.lstm(h, (h_0, c_0))
-
-            h = final_hidden_state[-1]
+            # h = h.permute(1, 0, 2)
+            #
+            # h_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
+            # c_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
+            #
+            # if torch.cuda.is_available():
+            #     h_0 = h_0.cuda()
+            #     c_0 = c_0.cuda()
+            #
+            # output, (final_hidden_state, final_cell_state) = self.lstm(h, (h_0, c_0))
+            #
+            # h = final_hidden_state[-1]
         else:
             h = features
 
