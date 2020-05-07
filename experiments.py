@@ -1,8 +1,10 @@
-from tqdm import tqdm_notebook as tqdm
+from tqdm import tqdm
+import warnings
+warnings.filterwarnings("ignore")
 
-from models import TADW, TriDnr
-from text_transformers import SBert, LDA, W2V, Sent2Vec, Doc2Vec
-from datasets import Cora, CiteseerM10
+from models import TADW, TriDnr, DeepWalk, Node2Vec, Hope
+from text_transformers import SBert, LDA, W2V, Sent2Vec, Doc2Vec, BOW, TFIDF
+from datasets import Cora, CiteseerM10, Dblp
 
 import numpy as np
 import pandas as pd
@@ -17,65 +19,70 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 from collections import defaultdict
 
+from task import Task
+
 
 candidates = [
-    (TriDnr, None, 'TriDnr'),
+#    (TriDnr, None, 'TriDnr'),
 #     (TADW, SBert, 'TADW + SBert'),
 #     (TADW, LDA, 'TADW + LDA'),
-#     (TADW, W2V, 'TADW + W2V'),
+#      (TADW, W2V, 'TADW + W2V'),
 #     (TADW, Sent2Vec, 'TADW + Sent2Vec'),
-#     (TADW, Doc2Vec, 'TADW + Doc2Vec'),
+#    (TADW, Doc2Vec, 'TADW + Doc2Vec'),
 #     (TADW, CountVectorizer, 'TADW + BOW'),
 #    (TADW, TfidfVectorizer, 'TADW + TFIDF')
 ]
 
-ds = Cora()
+datasets = [
+  # ('Cora', Cora),
+   ('CiteseerM10', CiteseerM10),
+   # ('DBLP', Dblp)
+]
 
-d = 160
-seeds = [1]  # [1, 10, 100]
+test_ratios = [0.5, 0.7, 0.9, 0.95]
+
+tasks = [
+    # ('BOW', lambda ds: Task(ds, test_ratios, lambda: BOW(), None, d=None, labels=False)),
+    # ('TFIDF', lambda ds: Task(ds, test_ratios, lambda: TFIDF(), None, d=None, labels=False)),
+    # ('LDA', lambda ds: Task(ds, test_ratios, lambda: LDA(), None, d=None, labels=False)),
+    # ('SBERT pretrained', lambda ds: Task(ds, test_ratios, lambda: SBert(train=False, d=300), None, d=None, labels=False)),
+    # ('W2V pretrained (d=300)', lambda ds: Task(ds, test_ratios, lambda: W2V(train=False, d=300), None, d=None, labels=False)),
+    # ('W2V (d=300)', lambda ds: Task(ds, test_ratios, lambda: W2V(train=True, d=300), None, d=None, labels=False)),
+    # ('W2V (d=64)', lambda ds: Task(ds, test_ratios, lambda: W2V(train=True, d=64), None, d=None, labels=False)),
+    # ('Doc2Vec pretrained (d=300)', lambda ds: Task(ds, test_ratios, lambda: Doc2Vec(train=False, d=300), None, d=None, labels=False)),
+    # ('Doc2Vec (d=300)', lambda ds: Task(ds, test_ratios, lambda: Doc2Vec(train=True, d=300), None, d=None, labels=False)),
+    # ('Doc2Vec (d=64)', lambda ds: Task(ds, test_ratios, lambda: Doc2Vec(train=True, d=64), None, d=None, labels=False)),
+    # ('Sent2Vec pretrained (d=600)', lambda ds: Task(ds, test_ratios, lambda: Sent2Vec(train=False, d=600), None, d=None, labels=False)),
+    # ('Sent2Vec (d=600)', lambda ds: Task(ds, test_ratios, lambda: Sent2Vec(train=True, d=600), None, d=None, labels=False)),
+    # ('Sent2Vec (d=64)', lambda ds: Task(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), None, d=None, labels=False)),
+    # ('DeepWalk (d=100)', lambda ds: Task(ds, test_ratios, None, DeepWalk, d=100, labels=False)),
+    # ('Node2Vec (d=100)', lambda ds: Task(ds, test_ratios, None, Node2Vec, d=100, labels=False)),
+    # ('Hope (d=100)', lambda ds: Task(ds, test_ratios, None, Hope, d=100, labels=False)),
+    ('TADW - BOW', lambda ds: Task(ds, test_ratios, BOW, TADW, d=160, labels=False)),
+    ('TADW - TFIDF', lambda ds: Task(ds, test_ratios, TFIDF, TADW, d=160, labels=False)),
+    ('TADW - Sent2Vec', lambda ds: Task(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), TADW, d=160, labels=False)),
+    ('TADW - Word2Vec', lambda ds: Task(ds, test_ratios, lambda: W2V(train=True, d=64), TADW, d=160, labels=False)),
+    ('TriDNR', lambda ds: Task(ds, test_ratios, None, TriDnr, d=160, labels=True)),
+    ('BOW:DeepWalk', lambda ds: Task(ds, test_ratios, BOW, DeepWalk, d=100,
+                                          labels=False, concat=True)),
+    ('Word2Vec:DeepWalk', lambda ds: Task(ds, test_ratios, lambda: W2V(train=True, d=64), DeepWalk, d=100,
+                                          labels=False, concat=True)),
+    ('Sent2Vec:DeepWalk', lambda ds: Task(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), DeepWalk, d=100,
+                                          labels=False, concat=True)),
+]
 
 
-res = defaultdict(list)
-for constr, transf, name in tqdm(candidates, desc='candidates'):
-    if transf is not None:
-        transformer = transf()
-        ds.transform_features(transformer)
+res = {}
 
-    data = ds.get_data()
+for ds_name, ds_constr in tqdm(datasets, desc='datasets'):
+    ds = ds_constr()
+    for task_name, task_constr in tqdm(tasks, desc='Tasks'):
+        task = task_constr(ds)
+        task_res = task.evaluate()
+        for test_ratio in task_res:
+            scores = task_res[test_ratio]
+            res[f'{1 - test_ratio} - {ds_name} - {task_name}'] = scores
 
-    if name != 'TriDnr':
-        model = constr(data['graph'], data['features'], dim=d)
-        model.learn_embeddings()
+for name, scores in res.items():
+    print(name, scores, np.mean(scores), np.std(scores))
 
-    for seed in tqdm(seeds, desc='seeds'):
-        train_indx, test_indx = train_test_split(data['main_ids'], stratify=data['main_labels'], test_size=0.5,
-                                                 random_state=seed)
-
-        if name == 'TriDnr':
-            labels = []
-            for i, label in enumerate(data['labels']):
-                if i in train_indx:
-                    labels.append(label)
-                else:
-                    labels.append(-1)
-
-            model = constr(data['graph'], data['features'], labels, dim=d)
-            model.learn_embeddings()
-
-        y = data['main_labels'].reshape(-1, 1)
-        ids = data['main_ids'].reshape(-1, 1)
-        dev_df = pd.DataFrame(np.hstack((ids, model.get_embeddings_for_ids(ids), y)),
-                              columns=['index'] + [f'{i}' for i in range(d)] + ['label'])
-        dev_df = dev_df.set_index('index')
-
-        train_X, train_y = dev_df.loc[train_indx].values[:, :-1], dev_df.loc[train_indx].values[:, -1]
-        test_X, test_y = dev_df.loc[test_indx].values[:, :-1], dev_df.loc[test_indx].values[:, -1]
-
-        clf = OneVsRestClassifier(GradientBoostingClassifier())
-        clf.fit(train_X, train_y)
-        pred_y = clf.predict(test_X)
-        f1 = f1_score(test_y, pred_y, average='micro')
-
-        print(name, f1)
-
-        res[name].append(f1)

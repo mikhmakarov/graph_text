@@ -2,6 +2,13 @@ import os
 import gensim.models as g
 import numpy as np
 
+from gensim.models import Doc2Vec as Doc2VecGensim
+from gensim.models.doc2vec import TaggedDocument
+
+
+from text_transformers.base_text_transformer import BaseTextTransformer
+from utils import preprocess_text
+
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 
@@ -14,27 +21,26 @@ output_file="./test_vectors.txt"
 start_alpha = 0.01
 infer_epoch = 1000
 
-# #load model
-# m = g.Doc2Vec.load(model)
-# test_docs = [ x.strip().split() for x in codecs.open(test_docs, "r", "utf-8").readlines() ]
-#
-# #infer test vectors
-# output = open(output_file, "w")
-# for d in test_docs:
-#     output.write(" ".join([str(x) for x in m.infer_vector(d, alpha=start_alpha, steps=infer_epoch)]) + "\n" )
-# output.flush()
-# output.close()
 
-
-class Doc2Vec(object):
-    def __init__(self):
+class Doc2Vec(BaseTextTransformer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.model = g.Doc2Vec.load(model)
 
     # fake fit to be consistent with count and tfidf vectorizers usage
     def fit_transform(self, texts):
+        clean_texts = [TaggedDocument(preprocess_text(t), tags='id_' + str(i)) for i, t in enumerate(texts)]
+        if self.train:
+            size = self.d
+            self.model = Doc2VecGensim(size=size, workers=8, min_count=3)
+            self.model.build_vocab(clean_texts)
+            self.model.train(clean_texts, total_examples=len(clean_texts), epochs=10)
+        else:
+            self.model = g.Doc2Vec.load(model)
+
         sentence_embeddings = []
-        for d in texts:
-            emb = self.model.infer_vector(d.split(), alpha=start_alpha, steps=infer_epoch)
+        for d in clean_texts:
+            emb = self.model.infer_vector(d.words, alpha=start_alpha, steps=infer_epoch)
             sentence_embeddings.append(emb)
 
         sentence_embeddings = np.array(sentence_embeddings)

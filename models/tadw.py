@@ -7,8 +7,8 @@ from models.base_model import BaseModel
 
 
 class TADW(BaseModel):
-    def __init__(self, graph, features, dim=80, lamb=0.2):
-        super(TADW, self).__init__(graph, features, dim)
+    def __init__(self, graph, features, dim=80, lamb=0.2, **kwargs):
+        super(TADW, self).__init__(graph, features, dim, **kwargs)
 
         self.g = graph
         self.features = np.array(features)

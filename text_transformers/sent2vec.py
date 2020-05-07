@@ -5,9 +5,11 @@ from subprocess import call
 import numpy as np
 from nltk.tokenize.stanford import StanfordTokenizer
 
+from text_transformers.base_text_transformer import BaseTextTransformer
+
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
 
-FASTTEXT_EXEC_PATH = os.path.join('/Users/mikhail/hse/year_2/thesis/fastText-0.9.1', "fasttext")
+FASTTEXT_EXEC_PATH = os.path.join('/Users/mikhail-makarov/hse/year_2/thesis/sent2vec', "fasttext")
 MODEL_WIKI_UNIGRAMS = os.path.join(CURRENT_PATH, "wiki_unigrams.bin")
 SNLP_TAGGER_JAR = os.path.join(CURRENT_PATH, "stanford-postagger.jar")
 
@@ -24,7 +26,7 @@ def tokenize(tknzr, sentence, to_lower=True):
         sentence = sentence.lower()
     sentence = re.sub('((www\.[^\s]+)|(https?://[^\s]+)|(http?://[^\s]+))', '<url>', sentence)  # replace urls by <url>
     sentence = re.sub('(\@[^\s]+)', '<user>', sentence)  # replace @user268 by <user>
-    filter(lambda word: ' ' not in word, sentence)
+    sentence = [s.strip() for s in sentence.split('<delimiter>')]
     return sentence
 
 
@@ -80,29 +82,47 @@ def dump_text_to_disk(file_path, X, Y=None):
                 out_stream.write(x+' \n')
 
 
-def get_embeddings_for_preprocessed_sentences(sentences, model_path, fasttext_exec_path):
+def get_embeddings_for_preprocessed_sentences(sentences, model_path, fasttext_exec_path, train, d):
     """Arguments:
         - sentences: a list of preprocessed sentences
         - model_path: a path to the sent2vec .bin model
         - fasttext_exec_path: a path to the fasttext executable
     """
     timestamp = str(time.time())
-    test_path = os.path.join(CURRENT_PATH, timestamp + '_fasttext.test.txt')
+    texts_path = os.path.join(CURRENT_PATH, timestamp + '_fasttext.test.txt')
     embeddings_path = os.path.join(CURRENT_PATH, timestamp + '_fasttext.embeddings.txt')
-    dump_text_to_disk(test_path, sentences)
-    call(fasttext_exec_path+
+    trained_model_path = os.path.join(CURRENT_PATH, timestamp + '_sent2vec_model')
+    dump_text_to_disk(texts_path, sentences)
+    if train:
+        call(
+            fasttext_exec_path +
+            ' sent2vec' +
+            ' -input ' +
+            texts_path +
+            ' -output ' +
+            trained_model_path +
+            ' -epoch 100' +
+            ' -dim ' + str(d) +
+            ' -minCount 3'
+            , shell=True
+        )
+        model_path = trained_model_path + '.bin'
+
+    call(fasttext_exec_path +
           ' print-sentence-vectors '+
           model_path + ' < '+
-          test_path + ' > ' +
+          texts_path + ' > ' +
           embeddings_path, shell=True)
     embeddings = read_embeddings(embeddings_path)
-    os.remove(test_path)
+    os.remove(texts_path)
     os.remove(embeddings_path)
+    if train:
+        os.remove(trained_model_path + '.bin')
     assert(len(sentences) == len(embeddings))
     return np.array(embeddings)
 
 
-def get_sentence_embeddings(sentences):
+def get_sentence_embeddings(sentences, train, d):
     """ Returns a numpy matrix of embeddings for one of the published models. It
     handles tokenization and can be given raw sentences.
     Arguments:
@@ -112,21 +132,22 @@ def get_sentence_embeddings(sentences):
     """
     tknzr = StanfordTokenizer(SNLP_TAGGER_JAR, encoding='utf-8')
     s = ' <delimiter> '.join(sentences) #just a trick to make things faster
-    tokenized_sentences_SNLP = tokenize_sentences(tknzr, [s])
-    tokenized_sentences_SNLP = tokenized_sentences_SNLP[0].split(' <delimiter> ')
+    tokenized_sentences_SNLP = tokenize_sentences(tknzr, [s])[0]
+    # tokenized_sentences_SNLP = tokenized_sentences_SNLP[0].split(' <delimiter> ')
     assert(len(tokenized_sentences_SNLP) == len(sentences))
     wiki_embeddings = get_embeddings_for_preprocessed_sentences(tokenized_sentences_SNLP, MODEL_WIKI_UNIGRAMS,
-                                                                    FASTTEXT_EXEC_PATH)
+                                                                    FASTTEXT_EXEC_PATH, train, d)
 
     return wiki_embeddings
 
 
-class Sent2Vec(object):
-    def __init__(self):
+class Sent2Vec(BaseTextTransformer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         pass
 
     # fake fit to be consistent with count and tfidf vectorizers usage
     def fit_transform(self, texts):
-        sentence_embeddings = get_sentence_embeddings(texts)
+        sentence_embeddings = get_sentence_embeddings(texts, self.train, self.d)
 
         return sentence_embeddings

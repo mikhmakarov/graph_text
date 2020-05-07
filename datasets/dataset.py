@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import scipy
 
+from copy import deepcopy
+
 from sklearn.preprocessing import LabelEncoder
 
 
@@ -14,12 +16,12 @@ class Dataset(object):
 
         graph = nx.from_edgelist(pd.read_csv(graph_path, sep=sep).values.tolist())
 
-        if partial:
-            # isolated nodes
-            for _id in texts_df.index.values:
-                if _id not in graph.nodes():
-                    graph.add_node(_id)
+        # isolated nodes
+        for _id in texts_df.index.values:
+            if _id not in graph.nodes():
+                graph.add_node(_id)
 
+        if partial:
             # nodes without attributes
             for _id in graph.nodes():
                 if _id not in df.index:
@@ -52,6 +54,8 @@ class Dataset(object):
         self.main_ids = self.ids[self.labels != -1]
         self.main_labels = self.labels[self.labels != -1]
 
+        self.n_classes = len(np.unique(self.main_labels))
+
     def transform_features(self, transformer):
         text_embs = transformer.fit_transform(self.texts)
 
@@ -67,6 +71,63 @@ class Dataset(object):
             'ids': self.ids,
             'labels': self.labels,
             'main_ids': self.main_ids,
-            'main_labels': self.main_labels
+            'main_labels': self.main_labels,
+            'n_classes': self.n_classes
         }
+
+    def get_lp_data(self, test_ratio, seed):
+        edges = deepcopy(list(self.graph.edges()))
+
+        n_test = int(test_ratio * len(edges))
+        n_train = len(edges) - n_test
+
+        np.random.seed(seed)
+        np.random.shuffle(edges)
+
+        test_edges = edges[:n_test]
+        test_target = [1 for _ in test_edges]
+        train_edges = edges[n_test:]
+        train_target = [1 for _ in train_edges]
+
+        train_graph = deepcopy(self.graph)
+
+        for edge in test_edges:
+            train_graph.remove_edge(*edge)
+
+        i = 0
+        while i < n_test:
+            u = np.random.randint(0, len(self.graph.nodes()) - 1)
+            v = np.random.randint(u + 1, len(self.graph.nodes()))
+
+            if (u, v) not in self.graph.edges() and (u, v) not in test_edges:
+                test_edges.append((u, v))
+                test_target.append(0)
+                i += 1
+
+        j = 0
+        while j < n_train:
+            u = np.random.randint(0, len(self.graph.nodes()) - 1)
+            v = np.random.randint(u + 1, len(self.graph.nodes()))
+
+            if (u, v) not in self.graph.edges() and (u, v) not in test_edges and (u, v) not in train_edges:
+                train_edges.append((u, v))
+                train_target.append(0)
+                j += 1
+
+        return {
+            'graph': train_graph,
+            'features': self.features,
+            'ids': self.ids,
+            'labels': self.labels,
+            'main_ids': self.main_ids,
+            'main_labels': self.main_labels,
+            'train_edges': train_edges,
+            'test_edges': test_edges,
+            'train_target': train_target,
+            'test_target': test_target,
+            'n_classes': self.n_classes
+        }
+
+
+
 

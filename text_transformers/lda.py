@@ -1,18 +1,20 @@
 import numpy as np
 import gensim
 import gensim.corpora as corpora
+
 from utils import preprocess_text
+from text_transformers.base_text_transformer import BaseTextTransformer
 
 
-class LDA(object):
-    def __init__(self):
-        pass
+class LDA(BaseTextTransformer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     # fake fit to be consistent with count and tfidf vectorizers usage
     def fit_transform(self, texts):
         clean_texts = [preprocess_text(t) for t in texts]
         id2word = corpora.Dictionary(clean_texts)
-        id2word.filter_extremes(no_below=10, no_above=0.3)
+        id2word.filter_extremes(no_below=3, no_above=0.7)
         corpus = [id2word.doc2bow(text) for text in clean_texts]
 
         lda_model = gensim.models.LdaMulticore(corpus=corpus,
