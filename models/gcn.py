@@ -37,9 +37,7 @@ class GCN(nn.Module):
             if pretrained_embs is not None:
                 self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
 
-            self.fc = nn.Linear(in_feats, 128)
-
-        self.gcn_layer1 = GraphConv(128, n_hidden, activation=activation)
+        self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
 
         self.gcn_layer2 = GraphConv(n_hidden, n_classes)
 

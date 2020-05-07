@@ -179,9 +179,9 @@ def train_gcn(dataset,
 
 def main():
     dataset = Cora()
-    transformer = Index()
-    dataset.transform_features(transformer, pretrained=False)
-    train_gcn(dataset, lr=1e-2, n_epochs=200, verbose=True, use_embs=True)
+    transformer = TFIDF()
+    dataset.transform_features(transformer)
+    train_gcn(dataset, lr=1e-2, n_epochs=200, verbose=True)
 
 
 if __name__ == '__main__':
