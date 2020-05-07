@@ -70,11 +70,13 @@ def train_gcn(dataset,
               cuda=False):
     data = dataset.get_data()
     if use_embs:
-        pad_ix, n_tokens, matrix = data['features']
+        pad_ix, n_tokens, matrix, pretrained_embs = data['features']
+        pretrained_embs = torch.FloatTensor(pretrained_embs)
         features = torch.LongTensor(matrix)
     else:
         pad_ix = None
         n_tokens = None
+        pretrained_embs = None
         features = torch.FloatTensor(data['features'])
 
     labels = torch.LongTensor(data['labels'])
@@ -112,7 +114,7 @@ def train_gcn(dataset,
     g.ndata['norm'] = norm.unsqueeze(1)
 
     if use_embs:
-        in_feats = 64
+        in_feats = 300
     else:
         in_feats = features.shape[1]
 
@@ -125,6 +127,7 @@ def train_gcn(dataset,
                 activation=F.relu,
                 dropout=dropout,
                 use_embs=use_embs,
+                pretrained_embs=pretrained_embs,
                 pad_ix=pad_ix,
                 n_tokens=n_tokens)
 
@@ -173,8 +176,8 @@ def train_gcn(dataset,
 def main():
     dataset = Cora()
     transformer = Index()
-    dataset.transform_features(transformer)
-    train_gcn(dataset, lr=1e-3, n_epochs=800, verbose=True, use_embs=True)
+    dataset.transform_features(transformer, pretrained=True)
+    train_gcn(dataset, lr=1e-2, n_epochs=200, verbose=True, use_embs=True)
 
 
 if __name__ == '__main__':

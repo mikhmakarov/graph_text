@@ -12,7 +12,7 @@ def test_tadw():
     # transformer = W2V()
     # transformer = Sent2Vec()
     # transformer = Doc2Vec()
-    ds.transform_features(transformer)
+    ds.transform_features(transformer, pretrained=True)
     data = ds.get_data()
     # ds.get_lp_data(0.3, 1)
     model = Hope(data['graph'], data['features'], data['labels'])

@@ -2,6 +2,8 @@ from collections import Counter
 
 import numpy as np
 
+import gensim.downloader as api
+
 from sklearn.feature_extraction.text import CountVectorizer
 
 from utils import preprocess_text
@@ -26,7 +28,7 @@ class Index(BaseTextTransformer):
 
         return matrix
 
-    def fit_transform(self, texts):
+    def fit_transform(self, texts, pretrained=False):
         min_count = 3
         max_count = len(texts) * 0.7
 
@@ -49,4 +51,18 @@ class Index(BaseTextTransformer):
 
         matrix = self.as_matrix(clean_texts, token_to_id, unk_ix, pad_ix)
 
-        return pad_ix, n_tokens, matrix
+        def get_word_embedding(word, w2v):
+            if word == pad:
+                return np.ones(300)
+            if word in w2v:
+                return w2v.get_vector(word)
+            else:
+                return np.zeros(300)
+
+        if pretrained:
+            model = api.load('word2vec-google-news-300')
+            embs = np.array([get_word_embedding(token, model) for token in unique_tokens])
+        else:
+            embs = None
+
+        return pad_ix, n_tokens, matrix, embs

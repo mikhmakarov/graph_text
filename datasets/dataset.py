@@ -56,8 +56,8 @@ class Dataset(object):
 
         self.n_classes = len(np.unique(self.main_labels))
 
-    def transform_features(self, transformer):
-        text_embs = transformer.fit_transform(self.texts)
+    def transform_features(self, transformer, **kwargs):
+        text_embs = transformer.fit_transform(self.texts, **kwargs)
 
         if scipy.sparse.issparse(text_embs):
             text_embs = text_embs.todense()

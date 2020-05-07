@@ -18,6 +18,7 @@ class GCN(nn.Module):
                  n_classes,
                  activation,
                  use_embs=False,
+                 pretrained_embs=None,
                  n_tokens=None,
                  pad_ix=None,
                  dropout=0.5):
@@ -30,6 +31,9 @@ class GCN(nn.Module):
 
         if use_embs:
             self.emb = nn.Embedding(n_tokens, in_feats, padding_idx=pad_ix)
+
+            if pretrained_embs is not None:
+                self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
 
         self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
 
