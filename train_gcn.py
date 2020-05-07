@@ -3,6 +3,7 @@ import time
 import torch
 import torch.nn.functional as F
 import numpy as np
+import dgl
 from dgl import DGLGraph
 
 
@@ -75,6 +76,7 @@ def train_gcn(dataset,
     test_mask = torch.BoolTensor(test_mask)
 
     g = DGLGraph(data['graph'])
+    g = dgl.transform.add_self_loop(g)
     n_edges = g.number_of_edges()
 
     degs = g.in_degrees().float()
