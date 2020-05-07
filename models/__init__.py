@@ -4,6 +4,6 @@ from .deepwalk import DeepWalk
 from .node2vec import Node2Vec
 from .hope import Hope
 from .graph_factorization import GF
-from .gcn import GCN
+from .gcn import GCN, GCN_Attention
 
 __all__ = ['TADW', 'TriDnr', 'DeepWalk', 'Node2Vec', 'Hope', 'GF', 'GCN']

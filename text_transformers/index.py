@@ -14,7 +14,7 @@ class Index(BaseTextTransformer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def as_matrix(self, sequences, token_to_id, unk_ix, pad_ix, max_len=100):
+    def as_matrix(self, sequences, token_to_id, unk_ix, pad_ix, max_len=150):
         """ Convert a list of tokens into a matrix with padding """
         if isinstance(sequences[0], str):
             sequences = list(map(str.split, sequences))

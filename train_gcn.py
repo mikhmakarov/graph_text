@@ -10,7 +10,7 @@ from dgl import DGLGraph
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 
-from models import GCN
+from models import GCN, GCN_Attention
 from datasets import Cora, CiteseerM10, Dblp
 from text_transformers import TFIDF, Index
 
@@ -124,7 +124,7 @@ def train_gcn(dataset,
 
     # + 1 for unknown class
     n_classes = data['n_classes'] + 1
-    model = GCN(g,
+    model = GCN_Attention(g,
                 in_feats=in_feats,
                 n_hidden=n_hidden,
                 n_classes=n_classes,
@@ -180,7 +180,7 @@ def train_gcn(dataset,
 def main():
     dataset = Cora()
     transformer = Index()
-    dataset.transform_features(transformer, pretrained=True)
+    dataset.transform_features(transformer, pretrained=False)
     train_gcn(dataset, lr=1e-2, n_epochs=200, verbose=True, use_embs=True)
 
 
