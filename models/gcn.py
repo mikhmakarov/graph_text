@@ -40,13 +40,7 @@ class GCN(nn.Module):
             if pretrained_embs is not None:
                 self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
 
-            self.lstm = nn.LSTM(in_feats, self.lstm_hidden_size, num_layers=self.lstm_num_layers, bidirectional=False)
-
-            conv_inp = self.lstm_hidden_size
-        else:
-            conv_inp = in_feats
-
-        self.gcn_layer1 = GraphConv(conv_inp, n_hidden, activation=activation)
+        self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
 
         self.gcn_layer2 = GraphConv(n_hidden, n_classes)
 
@@ -103,7 +97,13 @@ class GCN_LSTM(nn.Module):
             if pretrained_embs is not None:
                 self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
 
-        self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
+            self.lstm = nn.LSTM(in_feats, self.lstm_hidden_size, num_layers=self.lstm_num_layers, bidirectional=False)
+
+            conv_inp = self.lstm_hidden_size
+        else:
+            conv_inp = in_feats
+
+        self.gcn_layer1 = GraphConv(conv_inp, n_hidden, activation=activation)
 
         self.gcn_layer2 = GraphConv(n_hidden, n_classes)
 

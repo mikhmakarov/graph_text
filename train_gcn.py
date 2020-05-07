@@ -181,7 +181,7 @@ def main():
     dataset = Cora()
     transformer = Index()
     dataset.transform_features(transformer, pretrained=True)
-    train_gcn(dataset, lr=1e-1, n_epochs=200, verbose=True, use_embs=True)
+    train_gcn(dataset, lr=1e-2, n_epochs=200, verbose=True, use_embs=True)
 
 
 if __name__ == '__main__':
