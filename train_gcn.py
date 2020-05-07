@@ -60,7 +60,7 @@ def train_gcn(dataset,
               test_ratio=0.5,
               val_ratio=0.2,
               seed=1,
-              n_hidden=16,
+              n_hidden=64,
               n_epochs=200,
               lr=1e-2,
               weight_decay=5e-4,
@@ -115,7 +115,10 @@ def train_gcn(dataset,
     g.ndata['norm'] = norm.unsqueeze(1)
 
     if use_embs:
-        in_feats = 300
+        if pretrained_embs is not None:
+            in_feats = 300
+        else:
+            in_feats = 64
     else:
         in_feats = features.shape[1]
 
@@ -177,7 +180,7 @@ def train_gcn(dataset,
 def main():
     dataset = Cora()
     transformer = Index()
-    dataset.transform_features(transformer, pretrained=False)
+    dataset.transform_features(transformer, pretrained=True)
     train_gcn(dataset, lr=1e-1, n_epochs=200, verbose=True, use_embs=True)
 
 
