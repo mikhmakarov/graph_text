@@ -41,16 +41,16 @@ class Index(BaseTextTransformer):
             for token in text:
                 counter[token] += 1
 
-        unique_tokens = [t for t in counter.keys() if max_count >= counter[t] >= min_count]
+        self.unique_tokens = [t for t in counter.keys() if max_count >= counter[t] >= min_count]
         unk, pad = "UNK", "PAD"
-        unique_tokens = [unk, pad] + unique_tokens
+        self.unique_tokens = [unk, pad] + self.unique_tokens
 
-        token_to_id = {t: i for i, t in enumerate(unique_tokens)}
+        self.token_to_id = {t: i for i, t in enumerate(self.unique_tokens)}
 
-        unk_ix, pad_ix = map(token_to_id.get, [unk, pad])
-        n_tokens = len(unique_tokens)
+        unk_ix, pad_ix = map(self.token_to_id.get, [unk, pad])
+        n_tokens = len(self.unique_tokens)
 
-        matrix = self.as_matrix(clean_texts, token_to_id, unk_ix, pad_ix)
+        matrix = self.as_matrix(clean_texts, self.token_to_id, unk_ix, pad_ix)
 
         def get_word_embedding(word, w2v):
             if word == pad:
@@ -62,7 +62,7 @@ class Index(BaseTextTransformer):
 
         if pretrained:
             model = api.load('word2vec-google-news-300')
-            embs = np.array([get_word_embedding(token, model) for token in unique_tokens])
+            embs = np.array([get_word_embedding(token, model) for token in self.unique_tokens])
         else:
             embs = None
 

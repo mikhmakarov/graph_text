@@ -175,7 +175,7 @@ def train_gcn(dataset,
         if epoch >= 3:
             t0 = time.time()
 
-        f1, loss = train_one_epoch(model, features, train_mask, val_mask, labels, loss_fcn, optimizer, text=True)
+        f1, loss = train_one_epoch(model, features, train_mask, val_mask, labels, loss_fcn, optimizer)
 
         if epoch >= 3:
             dur.append(time.time() - t0)
