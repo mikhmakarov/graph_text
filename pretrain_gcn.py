@@ -66,10 +66,7 @@ def train_one_epoch(model,
                     text=False):
     model.train()
     # forward
-    if text:
-        logits = model.forward_text(features)
-    else:
-        logits = model(features)
+    logits = model(features)
 
     loss = loss_fcn(logits[train_mask], labels[train_mask])
 

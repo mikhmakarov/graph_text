@@ -137,7 +137,13 @@ class GCN_LSTM(nn.Module):
 
         self.dropout = nn.Dropout(p=dropout)
 
+        self.graph_freeze = False
+        self.text_freeze = False
+
     def forward(self, features):
+        if self.graph_freeze:
+            return self.forward_text(features)
+
         if self.use_embs:
             seq_len = torch.sum(features != self.pad_ix, axis=1)
 
@@ -180,9 +186,11 @@ class GCN_LSTM(nn.Module):
         return h
 
     def freeze_features(self, freeze):
+        self.text_freeze = freeze
         self.emb.weight.requires_grad = not freeze
 
     def freeze_graph(self, freeze):
+        self.graph_freeze = freeze
         self.gcn_layer1.weight.requires_grad = not freeze
         self.gcn_layer2.weight.requires_grad = not freeze
 
