@@ -53,8 +53,6 @@ class GCN(nn.Module):
 
             h = h.sum(dim=1) / seq_len
 
-            h = self.dropout(self.fc(h))
-
         else:
             h = features
 
