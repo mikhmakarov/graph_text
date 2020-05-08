@@ -10,9 +10,9 @@ from dgl import DGLGraph
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 
-from models import GCN, GCN_Attention
+from models import GCN, GCN_Attention, GCN_CNN
 from datasets import Cora, CiteseerM10, Dblp
-from text_transformers import TFIDF, Index
+from text_transformers import TFIDF, Index, BOW
 
 
 def get_masks(n,
@@ -124,7 +124,7 @@ def train_gcn(dataset,
 
     # + 1 for unknown class
     n_classes = data['n_classes'] + 1
-    model = GCN(g,
+    model = GCN_CNN(g,
                 in_feats=in_feats,
                 n_hidden=n_hidden,
                 n_classes=n_classes,
@@ -145,6 +145,7 @@ def train_gcn(dataset,
                                  lr=lr,
                                  weight_decay=weight_decay)
 
+    best_f1 = -100
     # initialize graph
     dur = []
     for epoch in range(n_epochs):
@@ -152,7 +153,12 @@ def train_gcn(dataset,
         if epoch >= 3:
             t0 = time.time()
         # forward
-        logits = model(features)
+        mask_probs = torch.empty(features.shape).uniform_(0, 1)
+        if cuda:
+            mask_probs = mask_probs.cuda()
+
+        mask_features = torch.where(mask_probs > 0.2, features, torch.zeros_like(features))
+        logits = model(mask_features)
         loss = loss_fcn(logits[train_mask], labels[train_mask])
 
         optimizer.zero_grad()
@@ -163,11 +169,17 @@ def train_gcn(dataset,
             dur.append(time.time() - t0)
 
         f1 = evaluate(model, features, labels, val_mask)
+
+        if f1 > best_f1:
+            best_f1 = f1
+            torch.save(model.state_dict(), 'best_model.pt')
+
         if verbose:
             print("Epoch {:05d} | Time(s) {:.4f} | Loss {:.4f} | F1 {:.4f} | "
                   "ETputs(KTEPS) {:.2f}".format(epoch, np.mean(dur), loss.item(),
                                                 f1, n_edges / np.mean(dur) / 1000))
 
+    model.load_state_dict(torch.load('best_model.pt'))
     f1 = evaluate(model, features, labels, test_mask)
 
     if verbose:
@@ -180,8 +192,9 @@ def train_gcn(dataset,
 def main():
     dataset = Cora()
     transformer = Index()
+    # transformer = BOW()
     dataset.transform_features(transformer)
-    train_gcn(dataset, lr=1e-2, n_epochs=200, use_embs=True, verbose=True)
+    train_gcn(dataset, lr=1e-2, n_epochs=10, use_embs=True, verbose=True)
 
 
 if __name__ == '__main__':

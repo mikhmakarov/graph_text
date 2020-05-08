@@ -41,7 +41,10 @@ class GCN(nn.Module):
         self.activation = activation
         self.fc2 = nn.Linear(256, n_classes)
 
-        self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
+        if use_embs:
+            self.gcn_layer1 = GraphConv(in_feats * 2, n_hidden, activation=activation)
+        else:
+            self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
 
         self.gcn_layer2 = GraphConv(n_hidden, n_classes)
 
@@ -56,7 +59,11 @@ class GCN(nn.Module):
 
         h = self.emb(features)
 
-        h = h.max(dim=1)[0]
+        h1 = h.sum(dim=1) / seq_len
+
+        h2 = h.max(dim=1)[0]
+
+        h = torch.cat((h1, h2), dim=1)
 
         return h
 
@@ -228,23 +235,33 @@ class GCN_CNN(nn.Module):
         self.lstm_num_layers = lstm_num_layers
         self.lstm_hidden_size = 64
 
-        if use_embs:
-            self.emb = nn.Embedding(n_tokens, in_feats, padding_idx=pad_ix)
+        in_channels = 1
+        out_channels = 128
+        kernel_heights = [2, 3, 4]
+        self.dense_conv_size = 64
+        self.after_conv_size = 128
 
-            if pretrained_embs is not None:
-                self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
+        self.emb = nn.Embedding(n_tokens, in_feats, padding_idx=pad_ix)
 
-            self.lstm = nn.LSTM(in_feats, self.lstm_hidden_size, num_layers=self.lstm_num_layers, bidirectional=False)
+        self.conv1 = nn.Conv2d(in_channels, out_channels, (kernel_heights[0], in_feats))
+        self.dense_conv1 = nn.Linear(out_channels, self.dense_conv_size)
+        self.conv2 = nn.Conv2d(in_channels, out_channels, (kernel_heights[1], in_feats))
+        self.dense_conv2 = nn.Linear(out_channels, self.dense_conv_size)
+        self.conv3 = nn.Conv2d(in_channels, out_channels, (kernel_heights[2], in_feats))
+        self.dense_conv3 = nn.Linear(out_channels, self.dense_conv_size)
+        self.transform_conv = nn.Linear(len(kernel_heights) * self.dense_conv_size, self.after_conv_size)
 
-            conv_inp = self.lstm_hidden_size
-        else:
-            conv_inp = in_feats
-
-        self.gcn_layer1 = GraphConv(conv_inp, n_hidden, activation=activation)
+        self.gcn_layer1 = GraphConv(self.after_conv_size, n_hidden, activation=activation)
 
         self.gcn_layer2 = GraphConv(n_hidden, n_classes)
 
         self.dropout = nn.Dropout(p=dropout)
+
+    def conv_block(self, input, conv_layer):
+        conv_out = conv_layer(input)
+        activation = F.relu(conv_out.squeeze(3))
+        max_out = F.max_pool1d(activation.squeeze(2), activation.size()[2])
+        return max_out.squeeze(2)
 
     def forward(self, features):
         if self.use_embs:
@@ -254,20 +271,15 @@ class GCN_CNN(nn.Module):
 
             h = self.emb(features)
 
-            # h = h.sum(dim=1) / seq_len
+            h = h.unsqueeze(1)
 
-            h = h.permute(1, 0, 2)
+            max_out1 = self.dense_conv1(self.conv_block(h, self.conv1))
+            max_out2 = self.dense_conv2(self.conv_block(h, self.conv2))
+            max_out3 = self.dense_conv3(self.conv_block(h, self.conv3))
 
-            h_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
-            c_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
+            h = torch.cat((max_out1, max_out2, max_out3), 1)
 
-            if torch.cuda.is_available():
-                h_0 = h_0.cuda()
-                c_0 = c_0.cuda()
-
-            output, (final_hidden_state, final_cell_state) = self.lstm(h, (h_0, c_0))
-
-            h = final_hidden_state[-1]
+            h = self.transform_conv(h)
         else:
             h = features
 
