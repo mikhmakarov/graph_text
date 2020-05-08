@@ -145,13 +145,20 @@ class GCN_LSTM(nn.Module):
             return self.forward_text(features)
 
         if self.use_embs:
-            seq_len = torch.sum(features != self.pad_ix, axis=1)
-
-            seq_len = seq_len.view((-1, 1))
-
             h = self.emb(features)
 
-            h = h.sum(dim=1) / seq_len
+            h = h.permute(1, 0, 2)
+
+            h_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
+            c_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
+
+            if torch.cuda.is_available():
+                h_0 = h_0.cuda()
+                c_0 = c_0.cuda()
+
+            output, (final_hidden_state, final_cell_state) = self.lstm(h, (h_0, c_0))
+
+            h = final_hidden_state[-1]
         else:
             h = features
 
@@ -188,6 +195,8 @@ class GCN_LSTM(nn.Module):
     def freeze_features(self, freeze):
         self.text_freeze = freeze
         self.emb.weight.requires_grad = not freeze
+        self.fc1.weight.requires_grad = not freeze
+        self.fc2.weight.requires_grad = not freeze
 
     def freeze_graph(self, freeze):
         self.graph_freeze = freeze

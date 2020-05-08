@@ -170,7 +170,7 @@ def train_gcn(dataset,
 
     # initialize graph
     dur = []
-    model.freeze_graph(True)
+    model.freeze_graph(False)
     for epoch in range(200):
         if epoch >= 3:
             t0 = time.time()
