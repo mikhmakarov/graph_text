@@ -14,7 +14,7 @@ class Index(BaseTextTransformer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def as_matrix(self, sequences, token_to_id, unk_ix, pad_ix, max_len=150):
+    def as_matrix(self, sequences, token_to_id, unk_ix, pad_ix, max_len=None):
         """ Convert a list of tokens into a matrix with padding """
         if isinstance(sequences[0], str):
             sequences = list(map(str.split, sequences))
@@ -30,8 +30,8 @@ class Index(BaseTextTransformer):
         return matrix
 
     def fit_transform(self, texts, pretrained=False):
-        min_count = 3
-        max_count = len(texts) * 0.7
+        min_count = 0 # 3
+        max_count = 10000000000 # len(texts) * 0.7
 
         clean_texts = [preprocess_text(t) for t in texts]
 

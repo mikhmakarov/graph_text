@@ -181,7 +181,7 @@ def main():
     dataset = CiteseerM10()
     transformer = Index()
     dataset.transform_features(transformer)
-    train_gcn(dataset, lr=1e-2, n_epochs=200, verbose=True)
+    train_gcn(dataset, lr=1e-3, n_epochs=600, use_embs=True, verbose=True)
 
 
 if __name__ == '__main__':

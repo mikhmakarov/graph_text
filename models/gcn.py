@@ -37,21 +37,32 @@ class GCN(nn.Module):
             if pretrained_embs is not None:
                 self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
 
+        self.fc1 = nn.Linear(in_feats, 256)
+        self.activation = activation
+        self.fc2 = nn.Linear(256, n_classes)
+
         self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
 
         self.gcn_layer2 = GraphConv(n_hidden, n_classes)
 
         self.dropout = nn.Dropout(p=dropout)
 
+    def apply_embs(self, features):
+        seq_len = torch.sum(features != self.pad_ix, axis=1)
+
+        seq_len = seq_len.view((-1, 1))
+
+        seq_len[seq_len == 0] = 1
+
+        h = self.emb(features)
+
+        h = h.sum(dim=1) / seq_len
+
+        return h
+
     def forward(self, features):
         if self.use_embs:
-            seq_len = torch.sum(features != self.pad_ix, axis=1)
-
-            seq_len = seq_len.view((-1, 1))
-
-            h = self.emb(features)
-
-            h = h.sum(dim=1) / seq_len
+            h = self.apply_embs(features)
 
         else:
             h = features
@@ -61,6 +72,15 @@ class GCN(nn.Module):
         h = self.dropout(h)
 
         h = self.gcn_layer2(self.g, h)
+
+        return h
+
+    def forward_text(self, features):
+        h = self.apply_embs(features)
+
+        h = self.activation(self.fc1(h))
+
+        h = self.fc2(h)
 
         return h
 
@@ -81,7 +101,7 @@ class GCN_LSTM(nn.Module):
                  activation,
                  use_embs=False,
                  pretrained_embs=None,
-                 lstm_num_layers=2,
+                 lstm_num_layers=1,
                  n_tokens=None,
                  pad_ix=None,
                  dropout=0.5):
@@ -107,6 +127,10 @@ class GCN_LSTM(nn.Module):
         else:
             conv_inp = in_feats
 
+        self.fc1 = nn.Linear(conv_inp, 256)
+        self.activation = activation
+        self.fc2 = nn.Linear(256, n_classes)
+
         self.gcn_layer1 = GraphConv(conv_inp, n_hidden, activation=activation)
 
         self.gcn_layer2 = GraphConv(n_hidden, n_classes)
@@ -115,26 +139,13 @@ class GCN_LSTM(nn.Module):
 
     def forward(self, features):
         if self.use_embs:
-            # seq_len = torch.sum(features != self.pad_ix, axis=1)
+            seq_len = torch.sum(features != self.pad_ix, axis=1)
 
-            # seq_len = seq_len.view((-1, 1))
+            seq_len = seq_len.view((-1, 1))
 
             h = self.emb(features)
 
-            # h = h.sum(dim=1) / seq_len
-
-            h = h.permute(1, 0, 2)
-
-            h_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
-            c_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
-
-            if torch.cuda.is_available():
-                h_0 = h_0.cuda()
-                c_0 = c_0.cuda()
-
-            output, (final_hidden_state, final_cell_state) = self.lstm(h, (h_0, c_0))
-
-            h = final_hidden_state[-1]
+            h = h.sum(dim=1) / seq_len
         else:
             h = features
 
@@ -145,6 +156,36 @@ class GCN_LSTM(nn.Module):
         h = self.gcn_layer2(self.g, h)
 
         return h
+
+    def forward_text(self, features):
+        h = self.emb(features)
+
+        h = h.permute(1, 0, 2)
+
+        h_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
+        c_0 = Variable(torch.zeros(1 * self.lstm_num_layers, h.shape[1], self.lstm_hidden_size))
+
+        if torch.cuda.is_available():
+            h_0 = h_0.cuda()
+            c_0 = c_0.cuda()
+
+        output, (final_hidden_state, final_cell_state) = self.lstm(h, (h_0, c_0))
+
+        h = final_hidden_state[-1]
+
+        h = self.dropout(self.activation(self.fc1(h)))
+
+        h = self.fc2(h)
+
+        return h
+
+    def freeze_features(self, freeze):
+        self.emb.weight.requires_grad = not freeze
+
+    def freeze_graph(self, freeze):
+        self.gcn_layer1.weight.requires_grad = not freeze
+        self.gcn_layer2.weight.requires_grad = not freeze
+
 
 
 class GCN_CNN(nn.Module):
