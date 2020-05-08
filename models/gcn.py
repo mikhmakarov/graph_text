@@ -56,7 +56,7 @@ class GCN(nn.Module):
 
         h = self.emb(features)
 
-        h = h.sum(dim=1) / seq_len
+        h = h.max(dim=1)[0]
 
         return h
 
