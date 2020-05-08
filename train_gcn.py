@@ -124,7 +124,7 @@ def train_gcn(dataset,
 
     # + 1 for unknown class
     n_classes = data['n_classes'] + 1
-    model = GCN_CNN(g,
+    model = GCN(g,
                 in_feats=in_feats,
                 n_hidden=n_hidden,
                 n_classes=n_classes,
@@ -191,10 +191,11 @@ def train_gcn(dataset,
 
 def main():
     dataset = Cora()
-    transformer = Index()
-    # transformer = BOW()
+    # transformer = Index()
+    transformer = TFIDF()
     dataset.transform_features(transformer)
-    train_gcn(dataset, lr=1e-2, n_epochs=10, use_embs=True, verbose=True)
+    # dataset.features = np.random.rand(len(dataset.features), 100)
+    train_gcn(dataset, lr=1e-2, n_epochs=200, use_embs=False, verbose=True)
 
 
 if __name__ == '__main__':
