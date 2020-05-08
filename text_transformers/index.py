@@ -24,7 +24,8 @@ class Index(BaseTextTransformer):
         matrix = np.full((len(sequences), max_len), np.int32(pad_ix))
         for i, seq in enumerate(sequences):
             row_ix = [token_to_id.get(word, unk_ix) for word in seq[:max_len]]
-            matrix[i, -len(row_ix):] = row_ix
+            if len(row_ix) > 0:
+                matrix[i, -len(row_ix):] = row_ix
 
         return matrix
 

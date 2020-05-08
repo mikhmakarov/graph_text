@@ -178,8 +178,8 @@ def train_gcn(dataset,
 
 
 def main():
-    dataset = Cora()
-    transformer = TFIDF()
+    dataset = CiteseerM10()
+    transformer = Index()
     dataset.transform_features(transformer)
     train_gcn(dataset, lr=1e-2, n_epochs=200, verbose=True)
 
