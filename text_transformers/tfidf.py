@@ -12,5 +12,5 @@ class TFIDF(BaseTextTransformer):
 
     def fit_transform(self, texts):
         clean_texts = [' '.join(preprocess_text(t)) for t in texts]
-        transformer = TfidfVectorizer(min_df=3, max_df=0.7)
+        transformer = TfidfVectorizer(min_df=3, max_df=0.7, preprocessor=lambda x: x, tokenizer=lambda t: t.split())
         return np.array(transformer.fit_transform(clean_texts).todense())

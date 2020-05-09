@@ -34,7 +34,7 @@ def normalize_adjacency(graph):
     return A
 
 
-def preprocess_text(text, stem=False):
+def preprocess_text(text, stem=True):
     tokens = []
     text = re.sub(r'[^a-zA-Z \t]+', ' ', text)
     for t, pos in nltk.pos_tag(nltk.word_tokenize(text.lower())):

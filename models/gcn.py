@@ -42,7 +42,7 @@ class GCN(nn.Module):
         self.fc2 = nn.Linear(256, n_classes)
 
         if use_embs:
-            self.gcn_layer1 = GraphConv(in_feats * 2, n_hidden, activation=activation)
+            self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
         else:
             self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
 
@@ -59,11 +59,7 @@ class GCN(nn.Module):
 
         h = self.emb(features)
 
-        h1 = h.sum(dim=1) / seq_len
-
-        h2 = h.max(dim=1)[0]
-
-        h = torch.cat((h1, h2), dim=1)
+        h = h.sum(dim=1) / seq_len
 
         return h
 

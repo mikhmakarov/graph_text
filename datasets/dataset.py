@@ -54,6 +54,9 @@ class Dataset(object):
         self.main_ids = self.ids[self.labels != -1]
         self.main_labels = self.labels[self.labels != -1]
 
+        for _id in self.ids:
+            self.graph.nodes[_id]['is_main'] = _id in self.main_ids
+
         self.n_classes = len(np.unique(self.main_labels))
 
     def transform_features(self, transformer, **kwargs):

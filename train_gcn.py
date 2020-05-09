@@ -144,6 +144,7 @@ def train_gcn(dataset,
     optimizer = torch.optim.Adam(model.parameters(),
                                  lr=lr,
                                  weight_decay=weight_decay)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.9, patience=20, min_lr=1e-10)
 
     best_f1 = -100
     # initialize graph
@@ -169,7 +170,7 @@ def train_gcn(dataset,
             dur.append(time.time() - t0)
 
         f1 = evaluate(model, features, labels, val_mask)
-
+        scheduler.step(1 - f1)
         if f1 > best_f1:
             best_f1 = f1
             torch.save(model.state_dict(), 'best_model.pt')

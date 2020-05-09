@@ -58,17 +58,17 @@ tasks = [
     # ('DeepWalk (d=100)', lambda ds: Task(ds, test_ratios, None, DeepWalk, d=100, labels=False)),
     # ('Node2Vec (d=100)', lambda ds: Task(ds, test_ratios, None, Node2Vec, d=100, labels=False)),
     # ('Hope (d=100)', lambda ds: Task(ds, test_ratios, None, Hope, d=100, labels=False)),
-    ('TADW - BOW', lambda ds: Task(ds, test_ratios, BOW, TADW, d=160, labels=False)),
-    ('TADW - TFIDF', lambda ds: Task(ds, test_ratios, TFIDF, TADW, d=160, labels=False)),
-    ('TADW - Sent2Vec', lambda ds: Task(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), TADW, d=160, labels=False)),
-    ('TADW - Word2Vec', lambda ds: Task(ds, test_ratios, lambda: W2V(train=True, d=64), TADW, d=160, labels=False)),
+    # ('TADW - BOW', lambda ds: Task(ds, test_ratios, BOW, TADW, d=160, labels=False)),
+    # ('TADW - TFIDF', lambda ds: Task(ds, test_ratios, TFIDF, TADW, d=160, labels=False)),
+    # ('TADW - Sent2Vec', lambda ds: Task(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), TADW, d=160, labels=False)),
+    # ('TADW - Word2Vec', lambda ds: Task(ds, test_ratios, lambda: W2V(train=True, d=64), TADW, d=160, labels=False)),
     ('TriDNR', lambda ds: Task(ds, test_ratios, None, TriDnr, d=160, labels=True)),
-    ('BOW:DeepWalk', lambda ds: Task(ds, test_ratios, BOW, DeepWalk, d=100,
-                                          labels=False, concat=True)),
-    ('Word2Vec:DeepWalk', lambda ds: Task(ds, test_ratios, lambda: W2V(train=True, d=64), DeepWalk, d=100,
-                                          labels=False, concat=True)),
-    ('Sent2Vec:DeepWalk', lambda ds: Task(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), DeepWalk, d=100,
-                                          labels=False, concat=True)),
+    # ('BOW:DeepWalk', lambda ds: Task(ds, test_ratios, BOW, DeepWalk, d=100,
+    #                                       labels=False, concat=True)),
+    # ('Word2Vec:DeepWalk', lambda ds: Task(ds, test_ratios, lambda: W2V(train=True, d=64), DeepWalk, d=100,
+    #                                       labels=False, concat=True)),
+    # ('Sent2Vec:DeepWalk', lambda ds: Task(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), DeepWalk, d=100,
+    #                                       labels=False, concat=True)),
 ]
 
 
@@ -76,12 +76,15 @@ res = {}
 
 for ds_name, ds_constr in tqdm(datasets, desc='datasets'):
     ds = ds_constr()
-    for task_name, task_constr in tqdm(tasks, desc='Tasks'):
-        task = task_constr(ds)
-        task_res = task.evaluate()
-        for test_ratio in task_res:
-            scores = task_res[test_ratio]
-            res[f'{1 - test_ratio} - {ds_name} - {task_name}'] = scores
+    try:
+        for task_name, task_constr in tqdm(tasks, desc='Tasks'):
+            task = task_constr(ds)
+            task_res = task.evaluate()
+            for test_ratio in task_res:
+                scores = task_res[test_ratio]
+                res[f'{1 - test_ratio} - {ds_name} - {task_name}'] = scores
+    except Exception as e:
+        print('EXCEPTION', str(e))
 
 for name, scores in res.items():
     print(name, scores, np.mean(scores), np.std(scores))

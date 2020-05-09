@@ -44,7 +44,7 @@ class Task:
 
                 if self.labels:
                     labels = []
-                    for i, label in zip(data['main_ids'], data['labels']):
+                    for i, label in zip(data['ids'], data['labels']):
                         if i in train_indx:
                             labels.append(label)
                         else:
