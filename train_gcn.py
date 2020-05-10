@@ -116,7 +116,7 @@ def train_gcn(dataset,
 
     if use_embs:
         if pretrained_embs is not None:
-            in_feats = 300
+            in_feats = 100
         else:
             in_feats = 64
     else:
@@ -192,11 +192,11 @@ def train_gcn(dataset,
 
 def main():
     dataset = Cora()
-    # transformer = Index()
-    transformer = TFIDF()
+    transformer = Index()
+    # transformer = TFIDF()
     dataset.transform_features(transformer)
     # dataset.features = np.random.rand(len(dataset.features), 100)
-    train_gcn(dataset, lr=1e-2, n_epochs=200, use_embs=False, verbose=True)
+    train_gcn(dataset, lr=1e-2, n_epochs=200, use_embs=True, verbose=True)
 
 
 if __name__ == '__main__':

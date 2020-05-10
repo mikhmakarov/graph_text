@@ -54,14 +54,14 @@ class Index(BaseTextTransformer):
 
         def get_word_embedding(word, w2v):
             if word == pad:
-                return np.ones(300)
+                return np.ones(100)
             if word in w2v:
                 return w2v.get_vector(word)
             else:
-                return np.zeros(300)
+                return np.random.rand(100)
 
         if pretrained:
-            model = api.load('word2vec-google-news-300')
+            model = api.load('glove-twitter-100')
             embs = np.array([get_word_embedding(token, model) for token in self.unique_tokens])
         else:
             embs = None
