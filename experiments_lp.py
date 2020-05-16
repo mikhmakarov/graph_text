@@ -2,7 +2,7 @@ from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore")
 
-from models import TADW, TriDnr, DeepWalk, Node2Vec, Hope
+from models import TADW, TriDnr, DeepWalk, Node2Vec, Hope, GCN_Model
 from text_transformers import SBert, LDA, W2V, Sent2Vec, Doc2Vec, BOW, TFIDF
 from datasets import Cora, CiteseerM10, Dblp
 
@@ -34,8 +34,8 @@ candidates = [
 ]
 
 datasets = [
-   ('Cora', Cora),
-   # ('CiteseerM10', CiteseerM10),
+   # ('Cora', Cora),
+   ('CiteseerM10', CiteseerM10),
    # ('DBLP', Dblp)
 ]
 
@@ -62,12 +62,13 @@ tasks = [
     # ('TADW - TFIDF', lambda ds: LpTask(ds, test_ratios, TFIDF, TADW, d=160)),
     # ('TADW - Sent2Vec', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), TADW, d=160)),
     # ('TADW - Word2Vec', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), TADW, d=160)),
-    ('TriDNR', lambda ds: LpTask(ds, test_ratios, None, TriDnr, d=160)),
-    ('BOW:DeepWalk', lambda ds: LpTask(ds, test_ratios, BOW, DeepWalk, d=100,
-                                     concat=True)),
-    ('Word2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), DeepWalk, d=100,
-                                          concat=True)),
-    ('Sent2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), DeepWalk, d=100, concat=True)),
+    # ('TriDNR', lambda ds: LpTask(ds, test_ratios, None, TriDnr, d=160)),
+    # ('BOW:DeepWalk', lambda ds: LpTask(ds, test_ratios, BOW, DeepWalk, d=100,
+    #                                  concat=True)),
+    # ('Word2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), DeepWalk, d=100,
+    #                                       concat=True)),
+    # ('Sent2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), DeepWalk, d=100, concat=True)),
+('GCN (TF-IDF)', lambda ds: LpTask(ds, test_ratios, TFIDF, GCN_Model, d=100, labels=True)),
 ]
 
 

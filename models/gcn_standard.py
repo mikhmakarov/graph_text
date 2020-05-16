@@ -73,11 +73,12 @@ def get_masks(n,
     return train_mask, val_mask, test_mask
 
 
-def evaluate(model, features, labels):
+def evaluate(model, features, labels, mask):
     model.eval()
     with torch.no_grad():
         logits = model(features)
-        labels = labels.detach().cpu().numpy()
+        logits = logits[mask]
+        labels = labels[mask].detach().cpu().numpy()
         _, predicted = torch.max(logits, dim=1)
         predicted = predicted.detach().cpu().numpy()
         f1 = f1_score(labels, predicted, average='micro')
@@ -93,6 +94,14 @@ class GCN_Model(BaseModel):
         features = torch.FloatTensor(self.features)
         labels = torch.LongTensor(self.labels)
         n_classes = len(np.unique(labels))
+
+        mask = []
+        for i in range(len(labels)):
+            if self.graph.nodes[i]['is_main']:
+                mask.append(1)
+            else:
+                mask.append(0)
+        mask = torch.BoolTensor(mask)
 
         g = DGLGraph(self.graph)
         g = dgl.transform.add_self_loop(g)
@@ -124,7 +133,7 @@ class GCN_Model(BaseModel):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.9, patience=20,
                                                             min_lr=1e-10)
 
-        verbose = True
+        verbose = False
         n_epochs = 100
         best_f1 = -100
         # initialize graph
@@ -133,12 +142,8 @@ class GCN_Model(BaseModel):
             model.train()
             if epoch >= 3:
                 t0 = time.time()
-            # forward
-            mask_probs = torch.empty(features.shape).uniform_(0, 1)
-
-            mask_features = torch.where(mask_probs > 0.2, features, torch.zeros_like(features))
-            logits = model(mask_features)
-            loss = loss_fcn(logits, labels)
+            logits = model(features)
+            loss = loss_fcn(logits[mask], labels[mask])
 
             optimizer.zero_grad()
             loss.backward()
@@ -147,7 +152,7 @@ class GCN_Model(BaseModel):
             if epoch >= 3:
                 dur.append(time.time() - t0)
 
-            f1 = evaluate(model, features, labels)
+            f1 = evaluate(model, features, labels, mask)
             scheduler.step(1 - f1)
             if f1 > best_f1:
                 best_f1 = f1
