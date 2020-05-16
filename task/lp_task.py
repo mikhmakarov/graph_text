@@ -11,14 +11,15 @@ from sklearn.multiclass import OneVsRestClassifier
 
 
 class LpTask:
-    def __init__(self, dataset, test_ratios, text_transformer_constr, network_model_constr, d=100, labels=True):
+    def __init__(self, dataset, test_ratios, text_transformer_constr, network_model_constr, d=100, concat=False, labels=True):
         self.dataset = dataset
         self.test_ratios = test_ratios
         self.text_transformer_constr = text_transformer_constr
         self.network_model_constr = network_model_constr
         self.d = d
         self.labels = labels
-        self.seeds = [1, 10, 100, 1000, 10000]
+        self.seeds = [1, 10]
+        self.concat = concat
 
     @staticmethod
     def __get_edge_embeddings(edges, mapping):
@@ -51,6 +52,9 @@ class LpTask:
                 else:
                     # use only document embeddings
                     embeddings = lp_data['features']
+
+                if self.concat:
+                    embeddings = np.hstack([embeddings, lp_data['features'][lp_data['main_ids']]])
 
                 embeddings_map = {i: v for i, v in enumerate(embeddings)}
 

@@ -14,18 +14,18 @@ from train_gcn import train_gcn
 
 datasets = [
    ('Cora', Cora),
-   ('CiteseerM10', CiteseerM10),
-   ('DBLP', Dblp)
+   # ('CiteseerM10', CiteseerM10),
+   # ('DBLP', Dblp)
 ]
 
-seeds = [1, 10, 100, 1000, 10000]
+seeds = [1]
 test_ratios = [0.5, 0.7, 0.9, 0.95]
 
 res = {}
 
 for ds_name, ds_constr in tqdm(datasets, desc='datasets'):
     ds = ds_constr()
-    ds.transform_features(TFIDF())
+    ds.transform_features(Sent2Vec(d=64))
     for test_ratio in tqdm(test_ratios, desc='test ratio'):
         scores = []
         for seed in seeds:

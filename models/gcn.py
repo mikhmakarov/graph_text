@@ -32,7 +32,7 @@ class GCN(nn.Module):
         self.n_tokens = n_tokens
 
         if use_embs:
-            self.emb = nn.Embedding(n_tokens, in_feats, padding_idx=pad_ix)
+            self.emb = nn.Embedding(n_tokens, int(in_feats / 2), padding_idx=pad_ix)
 
             if pretrained_embs is not None:
                 self.emb.weights = nn.Parameter(pretrained_embs, requires_grad=True)
@@ -42,7 +42,7 @@ class GCN(nn.Module):
         self.fc2 = nn.Linear(256, n_classes)
 
         if use_embs:
-            self.gcn_layer1 = GraphConv(in_feats * 2, n_hidden, activation=activation)
+            self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
         else:
             self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
 
