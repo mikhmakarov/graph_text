@@ -2,8 +2,8 @@ from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore")
 
-from models import TADW, TriDnr, DeepWalk, Node2Vec, Hope, GCN_Model
-from text_transformers import SBert, LDA, W2V, Sent2Vec, Doc2Vec, BOW, TFIDF
+from models import TADW, TriDnr, DeepWalk, Node2Vec, Hope, GCN_Model, GCN_Model_LP
+from text_transformers import SBert, LDA, W2V, Sent2Vec, Doc2Vec, BOW, TFIDF, Index
 from datasets import Cora, CiteseerM10, Dblp, ScopusEcon
 
 import numpy as np
@@ -34,10 +34,10 @@ candidates = [
 ]
 
 datasets = [
-#   ('Cora', Cora),
-#   ('CiteseerM10', CiteseerM10),
-#    ('DBLP', Dblp)
-    ('Scopus_Econ', ScopusEcon)
+   ('Cora', Cora),
+   ('CiteseerM10', CiteseerM10),
+    ('DBLP', Dblp)
+#    ('Scopus_Econ', ScopusEcon)
 ]
 
 test_ratios = [0.5, 0.7, 0.9, 0.95]
@@ -63,13 +63,13 @@ tasks = [
     # ('TADW - TFIDF', lambda ds: LpTask(ds, test_ratios, TFIDF, TADW, d=160)),
     # ('TADW - Sent2Vec', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), TADW, d=160)),
     # ('TADW - Word2Vec', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), TADW, d=160)),
-    ('TriDNR', lambda ds: LpTask(ds, test_ratios, None, TriDnr, d=160)),
-    ('BOW:DeepWalk', lambda ds: LpTask(ds, test_ratios, BOW, DeepWalk, d=100,
-                                      concat=True)),
-    ('Word2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), DeepWalk, d=100,
-                                           concat=True)),
-    ('Sent2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), DeepWalk, d=100, concat=True)),
-    # ('GCN (Sent2Vec)', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), GCN_Model, d=100, labels=True)),
+    # ('TriDNR', lambda ds: LpTask(ds, test_ratios, None, TriDnr, d=160)),
+    # ('BOW:DeepWalk', lambda ds: LpTask(ds, test_ratios, BOW, DeepWalk, d=100,
+     #                                 concat=True)),
+    # ('Word2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), DeepWalk, d=100,
+      #                                     concat=True)),
+    # ('Sent2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), DeepWalk, d=100, concat=True)),
+    ('GCN (Sent2Vec)', lambda ds: LpTask(ds, test_ratios, Index, GCN_Model_LP, d=100, labels=True)),
  #   ('GCN (Word2Vec)', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), GCN_Model, d=100, labels=True)),
 ]
 
@@ -78,17 +78,14 @@ res = {}
 
 for ds_name, ds_constr in tqdm(datasets, desc='datasets'):
     ds = ds_constr()
-    try:
-        for task_name, task_constr in tqdm(tasks, desc='Tasks'):
-            task = task_constr(ds)
-            task_res = task.evaluate()
-            for test_ratio in task_res:
-                scores = task_res[test_ratio]
-                res[f'{1 - test_ratio} - {ds_name} - {task_name}'] = scores
+    for task_name, task_constr in tqdm(tasks, desc='Tasks'):
+        task = task_constr(ds)
+        task_res = task.evaluate()
+        for test_ratio in task_res:
+            scores = task_res[test_ratio]
+            res[f'{1 - test_ratio} - {ds_name} - {task_name}'] = scores
 
-            print(res)
-    except Exception as e:
-        print('EXCEPTION', str(e))
+        print(res)
 
 for name, scores in res.items():
     print(name, scores, np.mean(scores), np.std(scores))
