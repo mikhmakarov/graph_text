@@ -25,7 +25,7 @@ infer_epoch = 1000
 class Doc2Vec(BaseTextTransformer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.model = g.Doc2Vec.load(model)
+        # self.model = g.Doc2Vec.load(model)
 
     # fake fit to be consistent with count and tfidf vectorizers usage
     def fit_transform(self, texts):

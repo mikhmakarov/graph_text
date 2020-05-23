@@ -14,8 +14,8 @@ from train_gcn import train_gcn
 
 datasets = [
    ('Cora', Cora),
-   # ('CiteseerM10', CiteseerM10),
-   # ('DBLP', Dblp)
+   ('CiteseerM10', CiteseerM10),
+   ('DBLP', Dblp)
 ]
 
 seeds = [1]
@@ -25,14 +25,14 @@ res = {}
 
 for ds_name, ds_constr in tqdm(datasets, desc='datasets'):
     ds = ds_constr()
-    ds.transform_features(Sent2Vec(d=64))
+    ds.transform_features(W2V(d=64))
     for test_ratio in tqdm(test_ratios, desc='test ratio'):
         scores = []
         for seed in seeds:
             score = train_gcn(ds, test_ratio, seed=seed, verbose=False)
             scores.append(score)
 
-        res[f'{1 - test_ratio} - {ds_name} - GCN'] = scores
+        res[f'{1 - test_ratio} - {ds_name} - GCN (Word2Vec)'] = scores
 
 
 for name, scores in res.items():

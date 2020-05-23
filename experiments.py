@@ -35,7 +35,7 @@ candidates = [
 
 datasets = [
   # ('Cora', Cora),
-   # ('CiteseerM10', CiteseerM10),
+   ('CiteseerM10', CiteseerM10),
    ('DBLP', Dblp)
 ]
 

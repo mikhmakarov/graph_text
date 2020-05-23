@@ -4,7 +4,7 @@ warnings.filterwarnings("ignore")
 
 from models import TADW, TriDnr, DeepWalk, Node2Vec, Hope, GCN_Model
 from text_transformers import SBert, LDA, W2V, Sent2Vec, Doc2Vec, BOW, TFIDF
-from datasets import Cora, CiteseerM10, Dblp
+from datasets import Cora, CiteseerM10, Dblp, ScopusEcon
 
 import numpy as np
 import pandas as pd
@@ -34,41 +34,43 @@ candidates = [
 ]
 
 datasets = [
-   # ('Cora', Cora),
-   ('CiteseerM10', CiteseerM10),
-   # ('DBLP', Dblp)
+#   ('Cora', Cora),
+#   ('CiteseerM10', CiteseerM10),
+#    ('DBLP', Dblp)
+    ('Scopus_Econ', ScopusEcon)
 ]
 
 test_ratios = [0.5, 0.7, 0.9, 0.95]
 
 tasks = [
-    ('BOW', lambda ds: LpTask(ds, test_ratios, lambda: BOW(), None, d=None)),
-    ('TFIDF', lambda ds: LpTask(ds, test_ratios, lambda: TFIDF(), None, d=None)),
-    ('LDA', lambda ds: LpTask(ds, test_ratios, lambda: LDA(), None, d=None)),
-    ('SBERT pretrained', lambda ds: LpTask(ds, test_ratios, lambda: SBert(train=False, d=300), None, d=None)),
-    ('W2V pretrained (d=300)', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=False, d=300), None, d=None)),
-    ('W2V (d=300)', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=300), None, d=None)),
-    ('W2V (d=64)', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), None, d=None)),
-    ('Doc2Vec pretrained (d=300)', lambda ds: LpTask(ds, test_ratios, lambda: Doc2Vec(train=False, d=300), None, d=None)),
-    ('Doc2Vec (d=300)', lambda ds: LpTask(ds, test_ratios, lambda: Doc2Vec(train=True, d=300), None, d=None)),
-    ('Doc2Vec (d=64)', lambda ds: LpTask(ds, test_ratios, lambda: Doc2Vec(train=True, d=64), None, d=None)),
-    ('Sent2Vec pretrained (d=600)', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=False, d=600), None, d=None)),
-    ('Sent2Vec (d=600)', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=600), None, d=None)),
-    ('Sent2Vec (d=64)', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), None, d=None)),
-    ('DeepWalk (d=100)', lambda ds: LpTask(ds, test_ratios, None, DeepWalk, d=100)),
-    ('Node2Vec (d=100)', lambda ds: LpTask(ds, test_ratios, None, Node2Vec, d=100)),
-    ('Hope (d=100)', lambda ds: LpTask(ds, test_ratios, None, Hope, d=100)),
-    ('TADW - BOW', lambda ds: LpTask(ds, test_ratios, BOW, TADW, d=160)),
-    ('TADW - TFIDF', lambda ds: LpTask(ds, test_ratios, TFIDF, TADW, d=160)),
-    ('TADW - Sent2Vec', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), TADW, d=160)),
-    ('TADW - Word2Vec', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), TADW, d=160)),
+    # ('BOW', lambda ds: LpTask(ds, test_ratios, lambda: BOW(), None, d=None)),
+    # ('TFIDF', lambda ds: LpTask(ds, test_ratios, lambda: TFIDF(), None, d=None)),
+    # ('LDA', lambda ds: LpTask(ds, test_ratios, lambda: LDA(), None, d=None)),
+    # ('SBERT pretrained', lambda ds: LpTask(ds, test_ratios, lambda: SBert(train=False, d=300), None, d=None)),
+    # ('W2V pretrained (d=300)', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=False, d=300), None, d=None)),
+    # ('W2V (d=300)', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=300), None, d=None)),
+    # ('W2V (d=64)', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), None, d=None)),
+    # ('Doc2Vec pretrained (d=300)', lambda ds: LpTask(ds, test_ratios, lambda: Doc2Vec(train=False, d=300), None, d=None)),
+    # ('Doc2Vec (d=300)', lambda ds: LpTask(ds, test_ratios, lambda: Doc2Vec(train=True, d=300), None, d=None)),
+    # ('Doc2Vec (d=64)', lambda ds: LpTask(ds, test_ratios, lambda: Doc2Vec(train=True, d=64), None, d=None)),
+    # ('Sent2Vec pretrained (d=600)', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=False, d=600), None, d=None)),
+    # ('Sent2Vec (d=600)', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=600), None, d=None)),
+    # ('Sent2Vec (d=64)', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), None, d=None)),
+    # ('DeepWalk (d=100)', lambda ds: LpTask(ds, test_ratios, None, DeepWalk, d=100)),
+    # ('Node2Vec (d=100)', lambda ds: LpTask(ds, test_ratios, None, Node2Vec, d=100)),
+    # ('Hope (d=100)', lambda ds: LpTask(ds, test_ratios, None, Hope, d=100)),
+    # ('TADW - BOW', lambda ds: LpTask(ds, test_ratios, BOW, TADW, d=160)),
+    # ('TADW - TFIDF', lambda ds: LpTask(ds, test_ratios, TFIDF, TADW, d=160)),
+    # ('TADW - Sent2Vec', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), TADW, d=160)),
+    # ('TADW - Word2Vec', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), TADW, d=160)),
     ('TriDNR', lambda ds: LpTask(ds, test_ratios, None, TriDnr, d=160)),
     ('BOW:DeepWalk', lambda ds: LpTask(ds, test_ratios, BOW, DeepWalk, d=100,
-                                     concat=True)),
+                                      concat=True)),
     ('Word2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), DeepWalk, d=100,
-                                          concat=True)),
+                                           concat=True)),
     ('Sent2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), DeepWalk, d=100, concat=True)),
-# ('GCN (TF-IDF)', lambda ds: LpTask(ds, test_ratios, TFIDF, GCN_Model, d=100, labels=True)),
+    # ('GCN (Sent2Vec)', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), GCN_Model, d=100, labels=True)),
+ #   ('GCN (Word2Vec)', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), GCN_Model, d=100, labels=True)),
 ]
 
 
@@ -83,6 +85,8 @@ for ds_name, ds_constr in tqdm(datasets, desc='datasets'):
             for test_ratio in task_res:
                 scores = task_res[test_ratio]
                 res[f'{1 - test_ratio} - {ds_name} - {task_name}'] = scores
+
+            print(res)
     except Exception as e:
         print('EXCEPTION', str(e))
 

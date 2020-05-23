@@ -54,7 +54,7 @@ class LpTask:
                     embeddings = lp_data['features']
 
                 if self.concat:
-                    embeddings = np.hstack([embeddings, lp_data['features'][lp_data['main_ids']]])
+                    embeddings = np.hstack([embeddings, lp_data['features']])
 
                 embeddings_map = {i: v for i, v in enumerate(embeddings)}
 
