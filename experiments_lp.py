@@ -35,8 +35,8 @@ candidates = [
 
 datasets = [
    ('Cora', Cora),
-   ('CiteseerM10', CiteseerM10),
-    ('DBLP', Dblp)
+   # ('CiteseerM10', CiteseerM10),
+    # ('DBLP', Dblp)
 #    ('Scopus_Econ', ScopusEcon)
 ]
 
@@ -69,7 +69,7 @@ tasks = [
     # ('Word2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), DeepWalk, d=100,
       #                                     concat=True)),
     # ('Sent2Vec:DeepWalk', lambda ds: LpTask(ds, test_ratios, lambda: Sent2Vec(train=True, d=64), DeepWalk, d=100, concat=True)),
-    ('GCN (Sent2Vec)', lambda ds: LpTask(ds, test_ratios, Index, GCN_Model_LP, d=100, labels=True)),
+    ('GCN (Sent2Vec)', lambda ds: LpTask(ds, test_ratios, SBert, GCN_Model_LP, d=100, labels=True)),
  #   ('GCN (Word2Vec)', lambda ds: LpTask(ds, test_ratios, lambda: W2V(train=True, d=64), GCN_Model, d=100, labels=True)),
 ]
 
