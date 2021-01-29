@@ -10,9 +10,59 @@ from dgl import DGLGraph
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 
-from models import GCN, GCN_Attention, GCN_CNN
 from datasets import Cora, CiteseerM10, Dblp
 from text_transformers import TFIDF, Index, BOW
+
+
+"""GCN using DGL nn package
+
+References:
+- Semi-Supervised Classification with Graph Convolutional Networks
+- Paper: https://arxiv.org/abs/1609.02907
+- Code: https://github.com/tkipf/gcn
+"""
+import torch
+import torch.nn as nn
+from torch.autograd import Variable
+from torch.nn import functional as F
+from dgl.nn.pytorch import GraphConv
+
+
+class GCN(nn.Module):
+    def __init__(self,
+                 g,
+                 in_feats,
+                 n_hidden,
+                 n_classes,
+                 activation,
+                 dropout=0.5):
+        super(GCN, self).__init__()
+
+        self.g = g
+
+        self.gcn_layer1 = GraphConv(in_feats, n_hidden, activation=activation)
+
+        self.gcn_layer2 = GraphConv(n_hidden, n_classes)
+
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, features):
+        h = features
+
+        h = self.gcn_layer1(self.g, h)
+
+        h = self.dropout(h)
+
+        h = self.gcn_layer2(self.g, h)
+
+        return h
+
+    def freeze_features(self, freeze):
+        self.emb.weight.requires_grad = not freeze
+
+    def freeze_graph(self, freeze):
+        self.gcn_layer1.weight.requires_grad = not freeze
+        self.gcn_layer2.weight.requires_grad = not freeze
 
 
 def get_masks(n,
@@ -65,23 +115,13 @@ def train_gcn(dataset,
               lr=1e-2,
               weight_decay=5e-4,
               dropout=0.5,
-              use_embs=False,
               verbose=True,
               cuda=False):
     data = dataset.get_data()
-    # train text embs
-    if use_embs:
-        pad_ix, n_tokens, matrix, pretrained_embs = data['features']
-        if pretrained_embs is not None:
-            pretrained_embs = torch.FloatTensor(pretrained_embs)
-        features = torch.LongTensor(matrix)
-    else:
-        pad_ix = None
-        n_tokens = None
-        pretrained_embs = None
-        features = torch.FloatTensor(data['features'])
 
+    features = torch.FloatTensor(data['features'])
     labels = torch.LongTensor(data['labels'])
+
     n = len(data['ids'])
     train_mask, val_mask, test_mask = get_masks(n,
                                                 data['main_ids'],
@@ -115,13 +155,7 @@ def train_gcn(dataset,
 
     g.ndata['norm'] = norm.unsqueeze(1)
 
-    if use_embs:
-        if pretrained_embs is not None:
-            in_feats = 100
-        else:
-            in_feats = 64
-    else:
-        in_feats = features.shape[1]
+    in_feats = features.shape[1]
 
     # + 1 for unknown class
     n_classes = data['n_classes'] + 1
@@ -130,12 +164,7 @@ def train_gcn(dataset,
                 n_hidden=n_hidden,
                 n_classes=n_classes,
                 activation=F.relu,
-                dropout=dropout,
-                use_embs=use_embs,
-                pretrained_embs=pretrained_embs,
-                pad_ix=pad_ix,
-                n_tokens=n_tokens)
-
+                dropout=dropout)
     if cuda:
         model.cuda()
 
@@ -155,12 +184,7 @@ def train_gcn(dataset,
         if epoch >= 3:
             t0 = time.time()
         # forward
-        mask_probs = torch.empty(features.shape).uniform_(0, 1)
-        if cuda:
-            mask_probs = mask_probs.cuda()
-
-        mask_features = torch.where(mask_probs > 0.2, features, torch.zeros_like(features))
-        logits = model(mask_features)
+        logits = model(features)
         loss = loss_fcn(logits[train_mask], labels[train_mask])
 
         optimizer.zero_grad()
@@ -193,11 +217,11 @@ def train_gcn(dataset,
 
 def main():
     dataset = Cora()
-    transformer = Index()
-    # transformer = TFIDF()
+    # transformer = Index()
+    transformer = TFIDF()
     dataset.transform_features(transformer)
     # dataset.features = np.random.rand(len(dataset.features), 100)
-    train_gcn(dataset, lr=1e-2, n_epochs=200, use_embs=True, verbose=True)
+    train_gcn(dataset, lr=1e-2, n_epochs=200, verbose=True)
 
 
 if __name__ == '__main__':
