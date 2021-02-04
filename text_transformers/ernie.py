@@ -21,9 +21,10 @@ class Ernie(BaseTextTransformer):
         super().__init__(**kwargs)
         self.tokenizer = AutoTokenizer.from_pretrained("nghuyong/ernie-2.0-en")
         self.model = AutoModel.from_pretrained("nghuyong/ernie-2.0-en").to(device)
+        # print(summary(self.model, input_size=(1000, 512)))
 
     # fake fit to be consistent with count and tfidf vectorizers usage
-    def fit_transform(self, texts, batch_size=100):
+    def fit_transform(self, texts, batch_size=50):
         # sentence_embeddings = self.model.encode(texts)
 
         batch_embs = []
