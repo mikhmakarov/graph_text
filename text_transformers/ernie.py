@@ -38,7 +38,7 @@ class Ernie(BaseTextTransformer):
                 tokenized = torch.tensor(tokenized).to(device)
                 out = self.model(tokenized)
                 embeddings_of_last_layer = out[0]
-                embeddings = embeddings_of_last_layer.mean(axis=1)
+                embeddings = embeddings_of_last_layer.mean(axis=1).detach().cpu().numpy()
                 batch_embs.append(embeddings)
 
         return np.vstack(batch_embs)
