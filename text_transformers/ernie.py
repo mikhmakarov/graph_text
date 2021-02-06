@@ -29,7 +29,6 @@ class Ernie(BaseTextTransformer):
 
         with torch.no_grad():
             batch_embs = []
-            texts = texts[:52]
             for text_batch in tqdm(iter_batches(texts.tolist(), batch_size)):
                 max_length = min(max([len(t.split(" ")) for t in text_batch]), 512)
                 tokenized = self.tokenizer(text_batch,
