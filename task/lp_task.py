@@ -11,7 +11,7 @@ from sklearn.multiclass import OneVsRestClassifier
 
 
 class LpTask:
-    def __init__(self, dataset, test_ratios, text_transformer_constr, network_model_constr, d=100, concat=False, labels=True):
+    def __init__(self, dataset, test_ratios, text_transformer_constr, network_model_constr, modelType, modelArgs, d=100, concat=False, labels=True, modelName="GAT"):
         self.dataset = dataset
         self.test_ratios = test_ratios
         self.text_transformer_constr = text_transformer_constr
@@ -20,6 +20,9 @@ class LpTask:
         self.labels = labels
         self.seeds = [1]
         self.concat = concat
+        self.modelType = modelType
+        self.modelArgs = modelArgs
+        self.modelName = modelName
 
     @staticmethod
     def __get_edge_embeddings(edges, mapping):
@@ -45,8 +48,11 @@ class LpTask:
 
                 if self.network_model_constr is not None:
                     model = self.network_model_constr(lp_data['graph'], lp_data['features'],
+                                                      self.modelType,
+                                                      self.modelArgs,
                                                       labels=lp_data['labels'],
-                                                      dim=self.d)
+                                                      dim=self.d,
+                                                      modelName=self.modelName)
                     model.learn_embeddings()
                     embeddings = model.embeddings
                 else:
