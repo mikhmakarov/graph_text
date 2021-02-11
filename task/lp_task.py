@@ -18,7 +18,7 @@ class LpTask:
         self.network_model_constr = network_model_constr
         self.d = d
         self.labels = labels
-        self.seeds = [1]
+        self.seeds = [1, 10]
         self.concat = concat
         self.modelType = modelType
         self.modelArgs = modelArgs
